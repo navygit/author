@@ -1,0 +1,122 @@
+<html>
+<head>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js"></script>
+<script type="text/javascript">
+$(function() {
+  $('form.author').on('submit', function(e) {
+    e.preventDefault();
+    var title = $(this).find('[name=title]').val().replace(/^\s|\s$/g, '');
+    if (title === '') {
+      $('#error').html('Title missing').removeClass('hidden');
+      return;
+    }
+    var json = {title: title, author:[], affiliations: []};
+    $('#author_list li:not(.hidden)').each(function() {
+      var aff = $(this).find('.nv_author_aff').text();
+      var affLocation = json.affiliations.indexOf(aff) + 1;
+      if (affLocation < 1) {
+        json.affiliations.push(aff);
+        affLocation = json.affiliations.length;
+      }
+      json.author.push({
+        'name' : $(this).find('.nv_author_name').html(),
+        'affiliation' : aff ? affLocation : 0
+      });
+    });
+    $('#out').removeClass('hidden').html('<pre>' + JSON.stringify(json) + '</pre>');
+  }).find('input').on('focus', function() {
+    $('#error').addClass('hidden').html('');
+  });
+  $('form.author .nv_author button').on('click', function() {
+    var inp = $(this).closest('div').find('input');
+    var value = inp.val();
+    if (value) {
+      var template = $('form.author .nv_author_template').last();
+      template.clone().insertBefore(template).removeClass('hidden').find('.nv_author_name').html(value)
+        .end().find('.nv_author_close').on('click', function(e) {
+          e.preventDefault();
+          $(this).closest('.nv_author_template').remove();
+        })
+        .end().find('.nv_author_assoc').on('click', function(e) {
+          e.preventDefault();
+          $('#affiliation').removeClass('hidden').data('author', $(this).closest('li'));
+        });
+    } else {
+      $('#error').html('Author name missing').removeClass('hidden');
+    }
+    inp.val('');
+  });
+  $('#affiliation button, #affiliation select').on('click change', function(e) {
+    if (e.type === 'click' && this.nodeName !== 'BUTTON'
+      || e.type === 'change' && this.nodeName !== 'SELECT'
+    ) {
+      return;
+    }
+    var div = $(this).closest('div');
+    var isSelect = this.nodeName === 'SELECT';
+    var text = isSelect ? $(this).val() : div.find('input').val();
+    if (text === '0') {
+      return;
+    }
+    if (!text) {
+      $('#error').html('Affiliation missing').removeclass('hidden');
+    } else {
+      div.data('author').find('.nv_author_aff').html('<small>' + text + '</small>');
+      if (!isSelect) {
+        div.find('select').append($('<option value="' + text + '">' + text + '</option>')).removeClass('hidden');
+      }
+    }
+    div.addClass('hidden').find('input').val('');
+  });
+  $('#author_list').sortable().disableSelection();
+});
+</script>
+<style type="text/css">
+.hidden { display: none }
+</style>
+</head>
+<body>
+  <div id="error" class="alert alert-danger hidden"></div>
+  <div class="col-lg-12">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h3 class="panel-title">Paper author management</h3>
+    </div>
+    <div class="panel-body">
+      <form class="author" action="#">
+      <div class="input-group input-group-lg">
+        <input type="text" class="form-control" name="title" placeholder="Paper title">
+      </div>
+      <ul id="author_list" class="list-group">
+  <li class="list-group-item hidden nv_author_template">
+    <span class="nv_author_name"></span>
+    <span class="nv_author_aff"></span>
+    <button class="btn btn-default nv_author_assoc">Set affiliation</button>
+    <button class="btn btn-default nv_author_close">Remove</button>
+</li>
+</ul>
+            <div class="input-group input-group-lg nv_author">
+        <input type="text" class="form-control" placeholder="Author">
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="button">Add author</button>
+        </span>
+      </div>
+      <button type="submit" class="btn btn-default">Submit</button>
+    </form>
+    </div>
+  </div>
+</div>
+<div id="affiliation" class="hidden">
+  <input type="text" class="form-control" placeholder="Affiliation">
+  <span class="input-group-btn">
+    <button class="btn btn-default" type="button">Add</button>
+  </span>
+  <select class="hidden">
+    <option value="0">Choose..</option>
+  </select>
+</div>
+<div id="out" class="hidden"></div>
+</body>
+</html>
